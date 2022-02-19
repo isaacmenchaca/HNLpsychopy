@@ -1,14 +1,22 @@
 from psychopy.visual import TextStim
+from psychopy import event
 from numpy.random import binomial, uniform
 import numpy as np
 import random
 
 
+def instructions(win):
+    instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. press F to choose to answer or J to skip the trial.\n' +
+                                        'If F was selected, a black fixation will appear. This is an indication to select an answer.\n' +
+                                        'Press F for majority X, press J for majority 0.' +
+                                        'Press any key to start.', pos = (0,0))
+    instructions.draw()
+    win.flip()
+    event.waitKeys(maxWait=float('inf'), modifiers=False, timeStamped=False, clearEvents=True)
+    
+
 def generateGridPlacement(n_n, numberOfItems):
     # will generate a grid of nxn dimensions.
-    
-    # For norm units: chose np.linspace(-0.95, 0.95, num=n) because didnt want shapes on the edge of screen.
-    # grid = np.array(np.meshgrid(np.linspace(-0.75, 0.75, num=n_n), np.linspace(-0.75, 0.75, num=n_n))).T.reshape(-1, 2)
     
     # For size=(1920, 1080)
     grid = np.array(np.meshgrid(np.linspace(-250, 250, num=n_n), np.linspace(-250, 250, num=n_n))).T.reshape(-1, 2)
@@ -19,7 +27,7 @@ def generateGridPlacement(n_n, numberOfItems):
     
     
 def generateX0Trial(win, numberOfItems, probabilityOf0, positionsGrid):
-    # 0s are the successes with a probability p of 50%
+    # 0s are the successes with a probability p of probabilityOf0%
     num0s = binomial(n = numberOfItems, p = probabilityOf0)
     
     for i in range(num0s - 1): # 0(n)
