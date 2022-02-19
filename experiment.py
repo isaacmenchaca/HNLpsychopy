@@ -10,18 +10,18 @@ from generateX0Trial import *
 
 
 def experiment():
-    win = visual.Window(fullscr = True, units='norm')
+    #win = visual.Window(fullscr = True, units='norm')
     # this window size for testing only
-    #win = visual.Window(size=(812, 500), units='norm')
+    win = visual.Window(size=(1920, 1080), units='pix')
 
 
     # 10 trials just to test stimulus.
     trials = 10
     for i in range(trials):
         positionsGrid = generateGridPlacement(n_n = 25, numberOfItems = 40)
-        generateX0Trial(win, numberOfItems = 40, probabilityOf0 = 0.5, positionsGrid = positionsGrid)
+        generateX0Trial(win, numberOfItems = 40, probabilityOf0 = 0.8, positionsGrid = positionsGrid)
         # give 1 second for stimulus presentation.
-        core.wait(secs = 1)
+        core.wait(secs = 0.3)
         
         # white fixation: choose to answer or opt out.
         generateFixationCross(win, type = 'opt')

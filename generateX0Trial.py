@@ -7,8 +7,11 @@ import random
 def generateGridPlacement(n_n, numberOfItems):
     # will generate a grid of nxn dimensions.
     
-    # chose np.linspace(-0.95, 0.95, num=n) because didnt want shapes on the edge of screen.
-    grid = np.array(np.meshgrid(np.linspace(-0.95, 0.95, num=n_n), np.linspace(-0.95, 0.95, num=n_n))).T.reshape(-1, 2)
+    # For norm units: chose np.linspace(-0.95, 0.95, num=n) because didnt want shapes on the edge of screen.
+    # grid = np.array(np.meshgrid(np.linspace(-0.75, 0.75, num=n_n), np.linspace(-0.75, 0.75, num=n_n))).T.reshape(-1, 2)
+    
+    # For size=(1920, 1080)
+    grid = np.array(np.meshgrid(np.linspace(-250, 250, num=n_n), np.linspace(-250, 250, num=n_n))).T.reshape(-1, 2)
     
     # used numberOfItems to select a # of random positions from grid.
     positionsGrid = grid[np.random.choice(np.arange(0, n_n ** 2, 1), size = numberOfItems, replace=False),:]
@@ -39,7 +42,7 @@ def generateX0Trial(win, numberOfItems, probabilityOf0, positionsGrid):
 
 def generateFixationCross(win, type = 'opt'):
     fixation = TextStim(win, text = '+', pos = (0,0))
-    fixation.height = 0.3
+    fixation.height = 50
     if type == 'opt':
         fixation.color = 'white'
     elif type == 'response':
