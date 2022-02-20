@@ -1,5 +1,5 @@
 from psychopy.visual import TextStim
-from psychopy import event
+from psychopy import visual, event, core
 from numpy.random import binomial, uniform
 import numpy as np
 import random
@@ -26,9 +26,11 @@ def generateGridPlacement(n_n, numberOfItems):
     return positionsGrid.tolist()
     
     
-def generateX0Trial(win, numberOfItems, probabilityOf0, positionsGrid):
+def generateX0Trial(win, numberOfItems, probabilityOf0, n_n, stimDuration):
+    positionsGrid = generateGridPlacement(n_n = n_n, numberOfItems = numberOfItems)
     # 0s are the successes with a probability p of probabilityOf0%
     num0s = binomial(n = numberOfItems, p = probabilityOf0)
+    numXs = numberOfItems - num0s
     
     for i in range(num0s - 1): # 0(n)
     # int 0 is red, int 1 is blue, using binomial(1, 0.5)
@@ -37,27 +39,34 @@ def generateX0Trial(win, numberOfItems, probabilityOf0, positionsGrid):
         stim0 = TextStim(win, text = '0', color =  ['red', 'blue'][binomial(1, 0.5)] , pos = pos)
         stim0.draw()
         
-        
-    for i in range(numberOfItems - num0s - 1): # 0(n)
+    
+    for i in range(numXs - 1): # 0(n)
         # x as a Stim.
         pos = positionsGrid.pop()
         stimX = TextStim(win, text = 'X', color = ['red', 'blue'][binomial(1, 0.5)], pos = pos)
         stimX.draw()
         
     win.flip()
-    return
+    core.wait(secs = stimDuration)
+    return num0s, numXs
 
 
 def generateFixationCross(win, type = 'opt'):
     fixation = TextStim(win, text = '+', pos = (0,0))
     fixation.height = 50
+    
     if type == 'opt':
         fixation.color = 'white'
     elif type == 'response':
         fixation.color = 'black'
+    
     fixation.draw()
     win.flip()
-    return
+    
+    keys = event.waitKeys(maxWait=float('inf'), keyList=['f', 'j'], modifiers=False,
+                     timeStamped=False, clearEvents=True)
+    print(keys)
+    return keys
     
     
 

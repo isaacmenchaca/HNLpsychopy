@@ -9,42 +9,36 @@ from psychopy import visual, event, core
 from generateX0Trial import *
 
 
-def experiment():
+def experiment(numTrials, probVariability):
     # this window size for testing only
     win = visual.Window(size=(1920, 1080), units='pix')
-    
     instructions(win)
     
-
+    
     # 10 trials just to test stimulus.
-    trials = 10
-    for i in range(trials):
-        positionsGrid = generateGridPlacement(n_n = 25, numberOfItems = 40)
-        generateX0Trial(win, numberOfItems = 40, probabilityOf0 = 0.8, positionsGrid = positionsGrid)
-        # give 300 ms for stimulus presentation.
-        core.wait(secs = 0.3)
+    for i in range(numTrials):
+        probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
+        print(probabilityOf0)
         
-        # white fixation: choose to answer or opt out.
-        generateFixationCross(win, type = 'opt')
-        # f to opt, j to skip.
-        keys = event.waitKeys(maxWait=float('inf'), keyList=['f', 'j'], modifiers=False,
-                     timeStamped=False, clearEvents=True)
-        print(keys)
+        # give 300 ms for stimulus presentation.
+        num0s, numXs = generateX0Trial(win, numberOfItems = 40, probabilityOf0 = probabilityOf0, n_n = 25, stimDuration = 0.3)
+        print(num0s, numXs)
+        
+        # white fixation: choose to answer or opt out. f to opt, j to skip.
+        optOrSkip = generateFixationCross(win, type = 'opt')
         
         # black fixation: choose answer.
-        if 'f' in keys:
-            generateFixationCross(win, type = 'response')
+        if 'f' in optOrSkip:
+            response = generateFixationCross(win, type = 'response')
             # f for 0s, f for Xs.
-            response = event.waitKeys(maxWait=float('inf'), keyList=['f', 'j'], modifiers=False, timeStamped=False, clearEvents=True)
             print(response)
             
         # wait 1 second till next trial.
         core.wait(secs = 1)
-
 
     win.close()
     core.quit()
     return
     
     
-experiment()
+experiment(numTrials = 10, probVariability = [0.20, 0.35, 0.50, 0.65, 0.80])
