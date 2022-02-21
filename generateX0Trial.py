@@ -1,5 +1,5 @@
 from psychopy.visual import TextStim
-from psychopy import visual, event, core
+from psychopy import visual, data, event, core, gui
 from numpy.random import binomial, uniform
 import numpy as np
 import random
@@ -69,4 +69,48 @@ def generateFixationCross(win, type = 'opt'):
     return keys
     
     
+def trial(win, numberOfItems, n_n, probVariability, stimDuration):
+    # 10 trials just to test stimulus.
+    probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
+    print(probabilityOf0)
+        
+    repeatedStimuli = True
+        
+    while repeatedStimuli:
+        # give 300 ms for stimulus presentation.
+        num0s, numXs = generateX0Trial(win, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration)
+        print(num0s, numXs) # checking observation.
+            
+        # white fixation: choose to answer or opt out. f to opt, j to skip.
+        optOrSkip = generateFixationCross(win, type = 'opt')
+            
+        # black fixation: choose answer.
+        if 'f' in optOrSkip:
+            response = generateFixationCross(win, type = 'response')
+            # f for 0s, f for Xs.
+            print(response)
+            repeatedStimuli = False
+                
+        print(repeatedStimuli)
+        # wait 1 second till next trial.
+        core.wait(secs = 1)
+    return
 
+
+def informationInputGUI():
+    exp_name = 'Letter-Biased Task'
+    
+    exp_info = {'participant': '',
+                'gender:': ('male', 'female'),
+                'age': '',
+                'left-handed': False}
+    dlg = gui.DlgFromDict(dictionary = exp_info, title = exp_name)
+    
+    exp_info['date'] = data.getDateStr()
+    exp_info['exp name'] = exp_name
+    
+    if dlg.OK == False:
+        core.quit() # ends process.
+        
+        
+    return exp_info
