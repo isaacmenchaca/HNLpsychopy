@@ -5,15 +5,33 @@ import numpy as np
 import random
 
 
-def instructions(win):
+def instructions(win, timer):
     instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. press F to choose to answer or J to skip the trial.\n' +
                                         'If F was selected, a black fixation will appear. This is an indication to select an answer.\n' +
                                         'Press F for majority X, press J for majority 0.' +
-                                        'Press any key to start.', pos = (0,0))
-    instructions.draw()
-    win.flip()
-    event.waitKeys(maxWait=float('inf'), modifiers=False, timeStamped=False, clearEvents=True)
+                                        'Press SPACE key to start.', pos = (0,0))
     
+    instructions.setAutoDraw(True)
+    keep_going = True
+    totalFrames = 0
+    #timer = core.Clock()
+    startTime = timer.getTime()
+    while keep_going:
+        totalFrames += 1
+        win.flip()
+        keys = event.getKeys(keyList=['space'], timeStamped=timer)
+        if len(keys) > 0:
+            keep_going = False
+            
+   
+    endTime = keys[0][1] - startTime
+    instructions.setAutoDraw(False)
+    
+    print({'Stim Type': 'Instructions', 'Start Time (ms)': startTime * 1000,
+            'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames})
+            
+    return {'Stim Type': 'Instructions', 'Start Time (ms)': startTime * 1000,
+            'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
 
 def generateGridPlacement(n_n, numberOfItems):
     # will generate a grid of nxn dimensions.
@@ -26,32 +44,42 @@ def generateGridPlacement(n_n, numberOfItems):
     return positionsGrid.tolist()
     
     
-def generateX0Trial(win, numberOfItems, probabilityOf0, n_n, stimDuration):
+def generateX0Trial(win, numberOfItems, probabilityOf0, n_n, stimDuration, frameRate, timer):
     positionsGrid = generateGridPlacement(n_n = n_n, numberOfItems = numberOfItems)
-    # 0s are the successes with a probability p of probabilityOf0%
+    # 0s are the successes with a probability p of probability Of 0s
     num0s = binomial(n = numberOfItems, p = probabilityOf0)
     numXs = numberOfItems - num0s
     
+    stim = []
     for i in range(num0s - 1): # 0(n)
-    # int 0 is red, int 1 is blue, using binomial(1, 0.5)
-    # 0 as a Stim.
         pos = positionsGrid.pop()
         stim0 = TextStim(win, text = '0', color =  ['red', 'blue'][binomial(1, 0.5)] , pos = pos)
-        stim0.draw()
+        stim0.setAutoDraw(True)
+        stim.append(stim0)
         
     
     for i in range(numXs - 1): # 0(n)
-        # x as a Stim.
         pos = positionsGrid.pop()
         stimX = TextStim(win, text = 'X', color = ['red', 'blue'][binomial(1, 0.5)], pos = pos)
-        stimX.draw()
-        
-    win.flip()
-    core.wait(secs = stimDuration)
-    return num0s, numXs
+        stimX.setAutoDraw(True)
+        stim.append(stimX)
+    
+    
+    totalFrames = round((stimDuration / 1000) * frameRate)
+    startTime = timer.getTime()
+    for frame in range(totalFrames):
+        win.flip()
+    endTime = timer.getTime() - startTime
+    
+    data = {'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Start Time (ms)': startTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+    
+    for item in stim:
+        item.setAutoDraw(False)
+    
+    return data
 
 
-def generateFixationCross(win, type = 'opt'):
+def generateFixationCross(win, probabilityOf0, frameRate, timer, type = 'opt'):
     fixation = TextStim(win, text = '+', pos = (0,0))
     fixation.height = 50
     
@@ -60,47 +88,70 @@ def generateFixationCross(win, type = 'opt'):
     elif type == 'response':
         fixation.color = 'black'
     
-    fixation.draw()
-    win.flip()
-    
-    keys = event.waitKeys(maxWait=float('inf'), keyList=['f', 'j'], modifiers=False,
-                     timeStamped=False, clearEvents=True)
-    print(keys)
-    return keys
+    fixation.setAutoDraw(True)
     
     
-def trial(win, numberOfItems, n_n, probVariability, stimDuration):
+    startTime = timer.getTime()
+    totalFrames = 0
+    keep_going = True
+    while keep_going:
+        totalFrames += 1
+        event.clearEvents(eventType='keyboard')
+        win.flip()
+        keys = event.getKeys(keyList=['f', 'j'], timeStamped=timer)
+        if len(keys) > 0:
+            keep_going = False
+            # draw one second here.
+            
+    responseTime = keys[0][1] - startTime
+    
+    correct = None
+    if type == 'opt':
+        endTime = responseTime
+    elif type == 'response':
+        for frame in range(frameRate): # waits 1 second before next trial. The ISI
+            win.flip()
+        endTime = timer.getTime() - startTime # end time of this fixation presentation.
+        totalFrames += frameRate # adding the ISI frames.
+        
+        if (keys[0][0] == 'j' and probabilityOf0 > 0.5) or (keys[0][0] == 'f' and probabilityOf0 < 0.5):
+            correct = True
+        else:
+            correct = False
+        
+    data = {'Stim Type': type, 'Response': keys[0][0], 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Response Time (ms)':  responseTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+
+    fixation.setAutoDraw(False)
+    return keys[0][0], data
+        
+    
+def trial(win, numberOfItems, n_n, probVariability, stimDuration, frameRate, timer):
     # 10 trials just to test stimulus.
     probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
-    print(probabilityOf0)
         
     repeatedStimuli = True
-        
     while repeatedStimuli:
         # give 300 ms for stimulus presentation.
-        num0s, numXs = generateX0Trial(win, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration)
-        print(num0s, numXs) # checking observation.
+        data = generateX0Trial(win, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration, frameRate = frameRate, timer = timer)
+        print(data)
             
         # white fixation: choose to answer or opt out. f to opt, j to skip.
-        optOrSkip = generateFixationCross(win, type = 'opt')
-            
+        optOrSkip, data = generateFixationCross(win, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'opt')
+        print(data)
+        
         # black fixation: choose answer.
         if 'f' in optOrSkip:
-            response = generateFixationCross(win, type = 'response')
-            # f for 0s, f for Xs.
-            print(response)
+            _, data = generateFixationCross(win, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'response')
             repeatedStimuli = False
+            print(data)
                 
-        print(repeatedStimuli)
-        # wait 1 second till next trial.
-        core.wait(secs = 1)
-    return
+    return # if correct return 1. else return 0?
 
 
 def informationInputGUI():
     exp_name = 'Letter-Biased Task'
     
-    exp_info = {'participant': '',
+    exp_info = {'participant ID': '',
                 'gender:': ('male', 'female'),
                 'age': '',
                 'left-handed': False}
