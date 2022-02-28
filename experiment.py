@@ -7,37 +7,35 @@ Created on Thu Feb 17 18:43:10 2022
 """
 from psychopy import visual, event, core
 from generateX0Trial import *
-from datetime import datetime
+import pandas as pd
 
 
-#addData = (sessionID, BlockID, trialID, flanker, target, resp, cond[trial], crit[trial], rt)
 def experiment(numTrials, probVariability):
 
-    #idk = informationInputGUI()
-    #print(type(idk))
-    
-    # data: subject identifier, trial number, time of trial onset, what variablity was present, time of opt response, time of response.
-
+    participantInfo = informationInputGUI()
     
     win = visual.Window(size=(1920, 1080), units='pix')
     
     timer = core.Clock()
-    experimentStartTime = timer.getTime()
-    
-    data = []
-    data.append(instructions(win, timer))
+    experimentStartTime = timer.getTime() * 1000
+    experimentData = []
+    experimentData.append(instructions(win, timer))
     for i in range(numTrials):
         # numberOfItems: total X and 0s in grid.
         # n_n: a value n which determines an nxn grid.
         # probVariability: the biased probability towards 0 in a bernoulli process.
         # stimDuration: seconds to display stimulus.
-        trial(win, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = 60, timer = timer)
-        
-    experimentEndTime = timer.getTime()
-    print(data)
+        correct = False
+        while not correct:
+            correct, data = trial(win, trial = i, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = 60, timer = timer)
+            experimentData += data
+
+    experimentEndTime = timer.getTime() * 1000
+    
+    saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData)
+    
     win.close()
     core.quit()
-    
     return
     
     
