@@ -63,12 +63,14 @@ def generateX0Trial(win, trial, numberOfItems, probabilityOf0, n_n, stimDuration
         stimX.setAutoDraw(True)
         stim.append(stimX)
     
-    totalFrames = round((stimDuration / 1000) * frameRate)
+    #totalFrames = round((stimDuration / 1000) * frameRate)
     startTime = timer.getTime()
-    for frame in range(totalFrames):
-        win.flip()
+    win.flip()
+    core.wait(secs = 0.25)
+#    for frame in range(totalFrames): # having a delay problem here ..
+#        win.flip()
     endTime = timer.getTime() - startTime
-    
+    totalFrames = ((endTime) * frameRate)
     data = {'Trial': trial, 'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Start Time (ms)': startTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
     
     for item in stim:
