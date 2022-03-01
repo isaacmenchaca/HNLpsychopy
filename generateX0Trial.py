@@ -54,27 +54,24 @@ def generateX0Trial(win, trial, numberOfItems, probabilityOf0, n_n, stimDuration
     for i in range(num0s - 1): # 0(n)
         pos = positionsGrid.pop()
         stim0 = TextStim(win, text = '0', color =  ['red', 'blue'][binomial(1, 0.5)] , pos = pos)
-        stim0.setAutoDraw(True)
         stim.append(stim0)
         
     for i in range(numXs - 1): # 0(n)
         pos = positionsGrid.pop()
         stimX = TextStim(win, text = 'X', color = ['red', 'blue'][binomial(1, 0.5)], pos = pos)
-        stimX.setAutoDraw(True)
         stim.append(stimX)
     
-    #totalFrames = round((stimDuration / 1000) * frameRate)
-    startTime = timer.getTime()
-    win.flip()
-    core.wait(secs = 0.25)
-#    for frame in range(totalFrames): # having a delay problem here ..
-#        win.flip()
-    endTime = timer.getTime() - startTime
-    totalFrames = ((endTime) * frameRate)
-    data = {'Trial': trial, 'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Start Time (ms)': startTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+    screenshot = visual.BufferImageStim(win, stim=stim)
     
-    for item in stim:
-        item.setAutoDraw(False)
+    totalFrames = round((stimDuration / 1000) * frameRate)
+    startTime = timer.getTime()
+
+    for frame in range(totalFrames): # 0(n)
+        screenshot.draw()
+        win.flip()
+    endTime = timer.getTime() - startTime
+
+    data = {'Trial': trial, 'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Stimulus Start Time (ms)': startTime * 1000, 'Total Stimulus Time (ms)': endTime * 1000, 'Total Estimated Frames': totalFrames}
     
     return data
 
@@ -95,15 +92,17 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
     startTime = timer.getTime()
     totalFrames = 0
     keep_going = True
-    while keep_going:
+    while keep_going: # 0(n)
         totalFrames += 1
         event.clearEvents(eventType='keyboard')
         win.flip()
         keys = event.getKeys(keyList=['f', 'j'], timeStamped=timer)
         if len(keys) > 0:
             keep_going = False
-            
+          
+    
     reactionTime = keys[0][1] - startTime
+    rtFrames = totalFrames
     
     correct = None
     if type == 'opt':
@@ -119,7 +118,7 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
         else:
             correct = False
         
-    data = {'Trial': trial, 'Stim Type': type, 'Response': keys[0][0], 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+    data = {'Trial': trial, 'Stim Type': type, 'Response': keys[0][0], 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
 
     fixation.setAutoDraw(False)
     return keys[0][0], data
@@ -128,11 +127,10 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
     
     
 def trial(win, trial, numberOfItems, n_n, probVariability, stimDuration, frameRate, timer):
-    # 10 trials just to test stimulus.
     probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
     storeData = []
     repeatedStimuli = True
-    while repeatedStimuli:
+    while repeatedStimuli: # 0(n ^ 2)
         data = generateX0Trial(win, trial = trial, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration, frameRate = frameRate, timer = timer)
         storeData.append(data)
             

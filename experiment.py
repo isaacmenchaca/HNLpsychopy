@@ -13,11 +13,10 @@ import pandas as pd
 def experiment(numTrials, probVariability):
 
     participantInfo = informationInputGUI()
-    
     win = visual.Window(size=(1920, 1080), units='pix')
-    
     timer = core.Clock()
     experimentStartTime = timer.getTime() * 1000
+    
     experimentData = []
     experimentData.append(instructions(win, timer))
     for i in range(numTrials):
