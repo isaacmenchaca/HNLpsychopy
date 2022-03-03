@@ -1,12 +1,14 @@
 from psychopy.visual import TextStim
 from psychopy import visual, data, event, core, gui
-from numpy.random import binomial, uniform
+from numpy.random import binomial
 import numpy as np
-import random
 import pandas as pd
+import serial
+import cedrus_util
 
 
-def instructions(win, timer):
+
+def instructions(win, timer, ser, keymap):
     instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. press F to choose to answer or J to skip the trial.\n' +
                                         'If F was selected, a black fixation will appear. This is an indication to select an answer.\n' +
                                         'Press F for majority X, press J for majority 0.' +
@@ -16,19 +18,29 @@ def instructions(win, timer):
     keep_going = True
     totalFrames = 0
     startTime = timer.getTime()
+    cedrus_util.reset_timer(ser)    # reset responsebox timer
+    keylist = []
     while keep_going:
         totalFrames += 1
         win.flip()
-        keys = event.getKeys(keyList=['space'], timeStamped=timer)
-        if len(keys) > 0:
-            keep_going = False
-            
+        receiveBuffer = ser.in_waiting
+        
+        if receiveBuffer != 0:
+            endTimer = timer.getTime()
+            keylist.append(ser.read(ser.in_waiting))
+            key, press, time = cedrus_util.readoutput([keylist[-1]], keymap)
+            if key and press == [1]:
+                break
+    
+    endTime = endTimer - startTime
+    # convert the time of correct button push
+    endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
    
-    endTime = keys[0][1] - startTime
+    
     instructions.setAutoDraw(False)
             
     return {'Stim Type': 'Instructions', 'Start Time (ms)': startTime * 1000,
-            'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+            'Total Time (ms)': endTime * 1000, 'Cedrus Total Time (ms)': endTimeCedrus, 'Total Frames': totalFrames}
 
 
 
@@ -78,7 +90,7 @@ def generateX0Trial(win, trial, numberOfItems, probabilityOf0, n_n, stimDuration
 
 
 
-def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = 'opt'):
+def generateFixationCross(win, ser, keymap, trial, probabilityOf0, frameRate, timer, type = 'opt'):
     fixation = TextStim(win, text = '+', pos = (0,0))
     fixation.height = 50
     
@@ -89,20 +101,34 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
     
     fixation.setAutoDraw(True)
     
-    startTime = timer.getTime()
-    totalFrames = 0
     keep_going = True
+    startTime = timer.getTime()
+    cedrus_util.reset_timer(ser)    # reset responsebox timer
+    totalFrames = 0
+    keylist = []
+    
+    cedrus_util.clear_buffer(ser)
     while keep_going: # 0(n)
         totalFrames += 1
-        event.clearEvents(eventType='keyboard')
+        
         win.flip()
-        keys = event.getKeys(keyList=['f', 'j'], timeStamped=timer)
-        if len(keys) > 0:
-            keep_going = False
-          
+        receiveBuffer = ser.in_waiting
+        
+        if receiveBuffer >= 6:
+            reactionTimer = timer.getTime()
+            keylist.append(ser.read(ser.in_waiting))
+            key, press, time = cedrus_util.readoutput([keylist[-1]], keymap)
+            if press == [1] and (key == [2] or key == [3]):
+                keep_going = False
+        cedrus_util.clear_buffer(ser)    
     
-    reactionTime = keys[0][1] - startTime
+    reactionTime = reactionTimer - startTime
+    # convert the time of correct button push
+    reactionTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
     rtFrames = totalFrames
+    
+    
+    
     
     correct = None
     if type == 'opt':
@@ -113,37 +139,37 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
         endTime = timer.getTime() - startTime # end time of this fixation presentation.
         totalFrames += frameRate # adding the ISI frames.
         
-        if (keys[0][0] == 'j' and probabilityOf0 > 0.5) or (keys[0][0] == 'f' and probabilityOf0 < 0.5):
+        if (key == [2] and probabilityOf0 < 0.5) or (key == [3] and probabilityOf0 > 0.5):
             correct = True
         else:
             correct = False
         
-    data = {'Trial': trial, 'Stim Type': type, 'Response': keys[0][0], 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+    data = {'Trial': trial, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTimeCedrus, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
 
     fixation.setAutoDraw(False)
-    return keys[0][0], data
+    return key, data
         
     
     
     
-def trial(win, trial, numberOfItems, n_n, probVariability, stimDuration, frameRate, timer):
+def trial(win, ser, keymap, trial, numberOfItems, n_n, probVariability, stimDuration, frameRate, timer):
     probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
     storeData = []
     repeatedStimuli = True
     while repeatedStimuli: # 0(n ^ 2)
         data = generateX0Trial(win, trial = trial, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration, frameRate = frameRate, timer = timer)
         storeData.append(data)
-            
         # white fixation: choose to answer or opt out. f to opt, j to skip.
-        optOrSkip, data = generateFixationCross(win, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'opt')
+        optOrSkip, data = generateFixationCross(win, ser, keymap, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'opt')
         storeData.append(data)
         
         # black fixation: choose answer.
-        if 'f' in optOrSkip:
-            _, data = generateFixationCross(win, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'response')
+        if optOrSkip == [2]:
+            _, data = generateFixationCross(win, ser, keymap, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'response')
             repeatedStimuli = False
             storeData.append(data)
-                
+
+               
     return data['Correct'], storeData
 
 

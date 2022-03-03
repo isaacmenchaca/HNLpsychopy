@@ -5,28 +5,47 @@ Created on Thu Feb 17 18:43:10 2022
 
 @author: isaacmenchaca
 """
-from psychopy import visual, event, core
+from psychopy import visual, event, core, logging
 from generateX0Trial import *
 import pandas as pd
+import serial
+import cedrus_util
+
+
 
 
 def experiment(numTrials, probVariability):
-
+    
     participantInfo = informationInputGUI()
+    
+    
+    # get portname -- paste Jennys Code.
+    portname, keymap = cedrus_util.getname()
+    ser = serial.Serial(portname, 115200) 
+
+
     win = visual.Window(size=(1920, 1080), units='pix')
+    logging.console.setLevel(logging.WARNING)  #this will print if there is a delay
+    win.recordFrameIntervals = True    
+    win.refreshThreshold = 1/60 + 0.004
+    frameRate = round(win.getActualFrameRate())
+    
+    cedrus_util.reset_timer(ser)    # reset responsebox timer
     timer = core.Clock()
     experimentStartTime = timer.getTime() * 1000
     
     experimentData = []
-    experimentData.append(instructions(win, timer))
+    experimentData.append(instructions(win, timer, ser, keymap))
     for i in range(numTrials):
         # numberOfItems: total X and 0s in grid.
         # n_n: a value n which determines an nxn grid.
         # probVariability: the biased probability towards 0 in a bernoulli process.
         # stimDuration: seconds to display stimulus.
+        print(i)
         correct = False
         while not correct:
-            correct, data = trial(win, trial = i, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = 60, timer = timer)
+            correct, data = trial(win, ser, keymap, trial = i, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = frameRate, timer = timer)
+            print(correct)
             experimentData += data
 
     experimentEndTime = timer.getTime() * 1000
@@ -34,6 +53,8 @@ def experiment(numTrials, probVariability):
     saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData)
     
     win.close()
+    
+    print('Overall, %i frames were dropped.' % win.nDroppedFrames)
     core.quit()
     return
     
