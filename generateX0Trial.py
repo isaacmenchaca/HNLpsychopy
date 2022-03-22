@@ -9,10 +9,10 @@ import cedrus_util
 
 
 def instructions(win, timer, ser, keymap):
-    instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. press F to choose to answer or J to skip the trial.\n' +
-                                        'If F was selected, a black fixation will appear. This is an indication to select an answer.\n' +
-                                        'Press F for majority X, press J for majority 0.' +
-                                        'Press SPACE key to start.', pos = (0,0))
+    instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. Press RED to answer or BLUE to skip the trial.\n\n' +
+                                        'If RED was selected, a black fixation will appear. This is a queue to give an answer.\n' +
+                                        'Press RED if the trial is biased toward majority X, or press BLUE for majority 0. ' +
+                                        'Press any button to start.', pos = (0,0))
     
     instructions.setAutoDraw(True)
     keep_going = True
@@ -49,7 +49,7 @@ def generateGridPlacement(n_n, numberOfItems):
     
     grid = np.array(np.meshgrid(np.linspace(-250, 250, num=n_n), np.linspace(-250, 250, num=n_n))).T.reshape(-1, 2)
     
-    # used numberOfItems to select a # of random positions from grid.
+    # used numberOfItems to select a # of random positions from grid. uniform random.
     positionsGrid = grid[np.random.choice(np.arange(0, n_n ** 2, 1), size = numberOfItems, replace=False),:]
     return positionsGrid.tolist()
    
@@ -177,7 +177,8 @@ def trial(win, ser, keymap, trial, numberOfItems, n_n, probVariability, stimDura
 
 def informationInputGUI():
     exp_name = 'Letter-Biased Task'
-    exp_info = {'participant ID': '',
+    exp_info = {'Participant ID': '',
+    		'Session': ('1', '2'),
                 'gender:': ('male', 'female'),
                 'age': '',
                 'left-handed': False}
@@ -198,6 +199,6 @@ def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, 
     participantInfo['Experiment End Time'] = experimentEndTime
     participantInfo['Experiment Data'] = experimentData
     df = pd.DataFrame.from_dict(participantInfo)
-    csvFileName = participantInfo['participant ID'] + '_' + participantInfo['date'] + '.csv'
+    csvFileName = participantInfo['Participant ID'] + '_' + participantInfo['date'] + '.csv'
     df.to_csv(csvFileName)
     return

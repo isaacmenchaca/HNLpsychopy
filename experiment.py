@@ -14,7 +14,7 @@ import cedrus_util
 
 
 
-def experiment(numTrials, probVariability):
+def experiment(numCorrectTrials, probVariability):
     
     participantInfo = informationInputGUI()
     
@@ -36,7 +36,7 @@ def experiment(numTrials, probVariability):
     
     experimentData = []
     experimentData.append(instructions(win, timer, ser, keymap))
-    for i in range(numTrials):
+    for i in range(numCorrectTrials):
         # numberOfItems: total X and 0s in grid.
         # n_n: a value n which determines an nxn grid.
         # probVariability: the biased probability towards 0 in a bernoulli process.
@@ -59,6 +59,6 @@ def experiment(numTrials, probVariability):
     return
     
     
-#experiment(numTrials = 5, probVariability = [0.20, 0.35, 0.45, 0.55, 0.65, 0.80])
+experiment(numCorrectTrials = 10, probVariability = [0.40, 0.43, 0.45, 0.53, 0.55, 0.6])
 
-experiment(numTrials = 5, probVariability = [0.01, .99])
+# experiment(numCorrectTrials = 5, probVariability = [0.01, .99])
