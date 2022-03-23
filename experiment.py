@@ -38,6 +38,5 @@ def experiment(numTrials, probVariability):
     return
     
     
-#experiment(numTrials = 5, probVariability = [0.20, 0.35, 0.45, 0.55, 0.65, 0.80])
+experiment(numTrials = 5, probVariability = [0.35, 0.45, 0.48, 0.52, 0.55, 0.65])
 
-experiment(numTrials = 5, probVariability = [0.01, .99])

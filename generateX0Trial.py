@@ -1,4 +1,4 @@
-from psychopy.visual import TextStim
+from psychopy.visual import TextStim, Rect
 from psychopy import visual, data, event, core, gui
 from numpy.random import binomial, uniform
 import numpy as np
@@ -108,15 +108,31 @@ def generateFixationCross(win, trial, probabilityOf0, frameRate, timer, type = '
     if type == 'opt':
         endTime = reactionTime
     elif type == 'response':
-        for frame in range(frameRate): # waits 1 second before next trial. The ISI
-            win.flip()
-        endTime = timer.getTime() - startTime # end time of this fixation presentation.
-        totalFrames += frameRate # adding the ISI frames.
         
+        endTime = timer.getTime() - startTime # end time of this fixation presentation.
+        
+        feedback = Rect(win, size = [150, 150], fillColor = None, lineWidth = 5, units = 'pix')
         if (keys[0][0] == 'j' and probabilityOf0 > 0.5) or (keys[0][0] == 'f' and probabilityOf0 < 0.5):
             correct = True
+            print('correct')
+            feedback.lineColor = 'green'
+            # fixation.color = 'green'
+            
         else:
             correct = False
+            feedback.lineColor = 'red'
+            # fixation.color = 'red'
+
+        feedback.setAutoDraw(True)
+        for frame in range(frameRate): # waits 1 second before next trial. The ISI
+            win.flip()
+        totalFrames += frameRate # adding the ISI frames.
+        feedback.setAutoDraw(False)
+        fixation.setAutoDraw(False)
+        for frame in range(frameRate): # waits 1 second before next trial. The ISI
+            win.flip()
+        totalFrames += frameRate # adding the ISI frames.
+
         
     data = {'Trial': trial, 'Stim Type': type, 'Response': keys[0][0], 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
 
