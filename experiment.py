@@ -5,9 +5,10 @@ Created on Thu Feb 17 18:43:10 2022
 
 @author: isaacmenchaca
 """
-from psychopy import visual, event, core, logging
-from generateX0Trial import *
+from psychopy import visual, core, logging
+from generateX0Trial import informationInputGUI, instructions, trial, saveExperimentData
 import pandas as pd
+import numpy as np
 import serial
 import cedrus_util
 
@@ -58,7 +59,9 @@ def experiment(numCorrectTrials, probVariability):
     core.quit()
     return
     
-    
-experiment(numCorrectTrials = 10, probVariability = [0.40, 0.43, 0.45, 0.53, 0.55, 0.6])
+
+experiment(numCorrectTrials = 10, probVariability = np.linspace(0.25,.75,10))
+
+# experiment(numCorrectTrials = 10, probVariability = [0.40, 0.43, 0.45, 0.53, 0.55, 0.6])
 
 # experiment(numCorrectTrials = 5, probVariability = [0.01, .99])
