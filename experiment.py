@@ -15,7 +15,7 @@ import cedrus_util
 
 
 
-def experiment(numCorrectTrials, probVariability):
+def experiment(numTrials, probVariability,numCorrectToEnd = None):
     
     participantInfo = informationInputGUI()
     
@@ -37,17 +37,23 @@ def experiment(numCorrectTrials, probVariability):
     
     experimentData = []
     experimentData.append(instructions(win, timer, ser, keymap))
-    for i in range(numCorrectTrials):
+    
+    for i in range(numTrials):
         # numberOfItems: total X and 0s in grid.
         # n_n: a value n which determines an nxn grid.
         # probVariability: the biased probability towards 0 in a bernoulli process.
         # stimDuration: seconds to display stimulus.
+        
+        
         print(i)
-        correct = False
-        while not correct:
-            correct, data = trial(win, ser, keymap, trial = i, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = frameRate, timer = timer)
-            print(correct)
-            experimentData += data
+        correct, data = trial(win, ser, keymap, trial = i, numberOfItems = 40, n_n = 25, probVariability = probVariability, stimDuration = 250, frameRate = frameRate, timer = timer)
+        print(correct)
+        experimentData += data
+        
+        if numCorrectToEnd != None and correct:
+            numCorrectToEnd -= 1
+        if numCorrectToEnd != None and numCorrectToEnd == 0:
+            break
 
     experimentEndTime = timer.getTime() * 1000
     
@@ -60,8 +66,6 @@ def experiment(numCorrectTrials, probVariability):
     return
     
 
-experiment(numCorrectTrials = 10, probVariability = np.linspace(0.25,.75,10))
+experiment(numTrials = 100, probVariability = np.linspace(0.25,.75,10), numCorrectToEnd = None)
 
-# experiment(numCorrectTrials = 10, probVariability = [0.40, 0.43, 0.45, 0.53, 0.55, 0.6])
 
-# experiment(numCorrectTrials = 5, probVariability = [0.01, .99])
