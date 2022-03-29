@@ -66,6 +66,6 @@ def experiment(numTrials, probVariability,numCorrectToEnd = None):
     return
     
 
-experiment(numTrials = 100, probVariability = np.linspace(0.25,.75,10), numCorrectToEnd = None)
-
+experiment(numTrials = 100, probVariability = [0.35, 0.4 , 0.45, 0.55, 0.6 , 0.65], numCorrectToEnd = None)
+                                                                                                                  
 
