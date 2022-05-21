@@ -6,7 +6,7 @@ Created on Thu Feb 17 18:43:10 2022
 @author: isaacmenchaca
 """
 from psychopy import visual, core, logging
-from generateX0TrialPilotBlockedFixed import informationInputGUI, instructions, trial, saveExperimentData, blockInstructions
+from generateX0Trial import informationInputGUI, instructions, trial, saveExperimentData, blockInstructions
 import pandas as pd
 import numpy as np
 import serial
@@ -45,8 +45,8 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     experimentStartTime = timer.getTime() * 1000
     
     experimentData = []
-    experimentData.append(instructions(win, timer, ser, keymap))
-    
+    experimentData.append(instructions(win, timer, ser, keymap, 1))
+    experimentData.append(instructions(win, timer, ser, keymap, 2))
 
     for blk in range(blocks):
         for i in range(numTrials):
@@ -73,7 +73,7 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     return
     
 
-experiment(numTrials = 50, blocks = 4, probabilities = [.40, 0.425, 0.575, 0.60], numberOfItems = 40, itemStimSize = 25, n_n = 10,  pixelSpace = 125, stimDuration = 250)
+experiment(numTrials = 8, blocks = 1, probabilities = [.40, 0.425, 0.575, 0.60], numberOfItems = 40, itemStimSize = 25, n_n = 10,  pixelSpace = 125, stimDuration = 250)
                                                                                                      
 # numberOfItems: total X and 0s in grid.
 # n_n: a value n which determines an nxn grid.

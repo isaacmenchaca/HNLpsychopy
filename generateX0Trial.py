@@ -9,16 +9,22 @@ from PIL import Image
 import pygame
 
 
-def instructions(win, timer, ser, keymap):
-    instructions = TextStim(win, text = 'Your task is to determine whether a trial is biased towards a majority ' +
-                                        'left or right tilted Ts on the screen. After the stimulus with Ts is presented, ' +
-                                        'a white fixation will appear where you will either (1) choose to answer by ' +
-                                        'pressing the RED button or (2) ask for another sample for more evidence by ' +
-                                        'pressing the BLUE button. If the option to answer with the RED button is ' + 
-                                        'selected, a black fixation will appear. Press the RED button if you ' + 
-                                        'believe the trial is biased toward majority left T, or press BLUE if you ' +
-                                        'believe the trial is biased toward majority right T. Audio feedback will play in ' +
-                                        'the occurance of an incorrect response.', pos = (0,0))
+def instructions(win, timer, ser, keymap, part):
+
+    if part == 1:
+        instructions = TextStim(win, text = 'Your task is to determine whether a trial is biased towards a majority ' +
+                                            'left or right tilted Ts on the screen. After the stimulus with Ts is presented, ' +
+                                            'a white fixation will appear where you will either (1) choose to answer by ' +
+                                            'pressing the RED button or (2) ask for another sample for more evidence by ' +
+                                            'pressing the BLUE button. You should expect to select the BLUE button as you ' +
+                                            'more uncertain, and expect to select the RED button when you are confident to ' +
+                                            'answer.', pos = (0,0))
+    elif part == 2:
+        instructions = TextStim(win, text='If the option to answer with the RED button is selected, a black fixation ' +
+                                          'will appear. Press the RED button if you believe the trial is biased toward ' +
+                                          'majority left T, or press BLUE if you believe the trial is biased toward ' +
+                                          'majority right T. Feedback will display in the occurance of an incorrect ' +
+                                          ' response.', pos=(0, 0))
     
     instructions.setAutoDraw(True)
     keep_going = True
@@ -108,11 +114,9 @@ def generateX0Trial(win, block, trial, totalStimuliDisplay, numberOfItems, proba
         pos = positionsGrid.pop()
         stimX = TextStim(win, text = 'T', color = 'white', pos = pos, ori = -45)
         stim.append(stimX)
-    
-    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(930,-230))) # photostim
-    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(930,-110))) # photostim
-    stim.append(visual.ImageStim(win=win, image='photcell/rect.png', units="pix", pos=(-930,-230))) # photostim
-    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(-930,-110))) # photostim
+
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-230))) # photostim
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-110))) # photostim
     screenshot = visual.BufferImageStim(win, stim=stim)
     
     
@@ -138,9 +142,14 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         fixation.color = 'white'
     elif type == 'response':
         fixation.color = 'black'
+        photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230)) # photostim
+        photocell2 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))  # photostim
+        photocell1.setAutoDraw(True)
+        photocell2.setAutoDraw(True)
     
     fixation.setAutoDraw(True)
-    
+
+
     keep_going = True
     startTime = timer.getTime()
     cedrus_util.reset_timer(ser)    # reset responsebox timer
@@ -167,10 +176,11 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
     reactionTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
     rtFrames = totalFrames
     
-    fixation.setAutoDraw(False) # have fixation out for penalty
+
     data = None
     correct = None
     if type == 'opt':
+        fixation.setAutoDraw(False)
         if key == [3]:
             penaltyFrameTime = int(0.5 * frameRate)
             for frame in range(penaltyFrameTime): # waits 0.5 seconds before next sample
@@ -184,16 +194,26 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTime, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
         
     elif type == 'response':
+        photocell1.setAutoDraw(False)
+        photocell2.setAutoDraw(False)
+
+        
+        if (key == [2] and probabilityOf0 < 0.5) or (key == [3] and probabilityOf0 > 0.5):
+            correct = True
+
+        else:
+            correct = False
+            #incorrect.play()
+            incorrectFrameTime = int(0.5 * frameRate)
+            fixation.color = 'red'
+            for frame in range(incorrectFrameTime): # waits 0.5 seconds before next sample
+                win.flip()
+            totalFrames += incorrectFrameTime
+        fixation.setAutoDraw(False)
         for frame in range(frameRate): # waits 1 second before next trial. The ISI
             win.flip()
         endTime = timer.getTime() - startTime # end time of this fixation presentation.
         totalFrames += frameRate # adding the ISI frames.
-        
-        if (key == [2] and probabilityOf0 < 0.5) or (key == [3] and probabilityOf0 > 0.5):
-            correct = True
-        else:
-            correct = False
-            #incorrect.play()
             
         data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTimeCedrus, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
         
