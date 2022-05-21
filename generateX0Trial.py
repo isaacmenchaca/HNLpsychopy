@@ -1,18 +1,24 @@
 from psychopy.visual import TextStim
-from psychopy import visual, data, event, core, gui
+from psychopy import visual, data, event, core, gui, sound
 from numpy.random import binomial
 import numpy as np
 import pandas as pd
 import serial
 import cedrus_util
-
+from PIL import Image
+import pygame
 
 
 def instructions(win, timer, ser, keymap):
-    instructions = TextStim(win, text = 'After stimulus displays, a white fixation will appear. Press RED to answer or BLUE to skip the trial.\n\n' +
-                                        'If RED was selected, a black fixation will appear. This is a queue to give an answer.\n' +
-                                        'Press RED if the trial is biased toward majority X, or press BLUE for majority 0. ' +
-                                        'Press any button to start.', pos = (0,0))
+    instructions = TextStim(win, text = 'Your task is to determine whether a trial is biased towards a majority ' +
+                                        'left or right tilted Ts on the screen. After the stimulus with Ts is presented, ' +
+                                        'a white fixation will appear where you will either (1) choose to answer by ' +
+                                        'pressing the RED button or (2) ask for another sample for more evidence by ' +
+                                        'pressing the BLUE button. If the option to answer with the RED button is ' + 
+                                        'selected, a black fixation will appear. Press the RED button if you ' + 
+                                        'believe the trial is biased toward majority left T, or press BLUE if you ' +
+                                        'believe the trial is biased toward majority right T. Audio feedback will play in ' +
+                                        'the occurance of an incorrect response.', pos = (0,0))
     
     instructions.setAutoDraw(True)
     keep_going = True
@@ -40,58 +46,92 @@ def instructions(win, timer, ser, keymap):
     instructions.setAutoDraw(False)
             
     return {'Stim Type': 'Instructions', 'Start Time (ms)': startTime * 1000,
-            'Total Time (ms)': endTime * 1000, 'Cedrus Total Time (ms)': endTimeCedrus, 'Total Frames': totalFrames}
+            'Total Time (ms)': endTime * 1000, 'CEDRUS Total Time (ms)': endTimeCedrus, 'Total Frames': totalFrames}
 
 
+def blockInstructions(win, timer, ser, keymap, block, blocks):
+    instructions = TextStim(win, text = 'Block ' + str(block) + '/' + str(blocks) + ' is now finished. To continue, press any button.'
+                                         , pos = (0,0))
+    
+    instructions.setAutoDraw(True)
+    keep_going = True
+    totalFrames = 0
+    startTime = timer.getTime()
+    cedrus_util.reset_timer(ser)    # reset responsebox timer
+    keylist = []
+    while keep_going:
+        totalFrames += 1
+        win.flip()
+        receiveBuffer = ser.in_waiting
+        
+        if receiveBuffer != 0:
+            endTimer = timer.getTime()
+            keylist.append(ser.read(ser.in_waiting))
+            key, press, time = cedrus_util.readoutput([keylist[-1]], keymap)
+            if key and press == [1]:
+                break
+    
+    endTime = endTimer - startTime
+    # convert the time of correct button push
+    endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    instructions.setAutoDraw(False)
+            
+    return {'Stim Type': 'Block Instructions', 'Start Time (ms)': startTime * 1000,
+            'Total Time (ms)': endTime * 1000, 'CEDRUS Total Time (ms)': endTimeCedrus, 'Total Frames': totalFrames}
 
-def generateGridPlacement(n_n, numberOfItems):
+
+def generateGridPlacement(n_n, numberOfItems, pixelSpace):
     # will generate a grid of nxn dimensions.
     
-    grid = np.array(np.meshgrid(np.linspace(-250, 250, num=n_n), np.linspace(-250, 250, num=n_n))).T.reshape(-1, 2)
+    grid = np.array(np.meshgrid(np.linspace(-pixelSpace, pixelSpace, num=n_n), np.linspace(-pixelSpace, pixelSpace, num=n_n))).T.reshape(-1, 2)
     
     # used numberOfItems to select a # of random positions from grid. uniform random.
     positionsGrid = grid[np.random.choice(np.arange(0, n_n ** 2, 1), size = numberOfItems, replace=False),:]
     return positionsGrid.tolist()
-   
-   
-   
+
     
-def generateX0Trial(win, trial, numberOfItems, probabilityOf0, n_n, stimDuration, frameRate, timer):
-    positionsGrid = generateGridPlacement(n_n = n_n, numberOfItems = numberOfItems)
+def generateX0Trial(win, block, trial, totalStimuliDisplay, numberOfItems, probabilityOf0, n_n, itemStimSize,  pixelSpace, stimDuration, frameRate, timer):
+    
+    positionsGrid = generateGridPlacement(n_n = n_n, numberOfItems = numberOfItems, pixelSpace = pixelSpace)
+    
     # 0s are the successes with a probability p of probability Of 0s
     num0s = binomial(n = numberOfItems, p = probabilityOf0)
     numXs = numberOfItems - num0s
     
     stim = []
-    for i in range(num0s - 1): # 0(n)
+    for i in range(num0s): # 0(n)
         pos = positionsGrid.pop()
-        stim0 = TextStim(win, text = '0', color =  ['red', 'blue'][binomial(1, 0.5)] , pos = pos)
+        stim0 = TextStim(win, text = 'T', color =  'white', pos = pos, ori = 45)
         stim.append(stim0)
         
-    for i in range(numXs - 1): # 0(n)
+    for i in range(numXs): # 0(n)
         pos = positionsGrid.pop()
-        stimX = TextStim(win, text = 'X', color = ['red', 'blue'][binomial(1, 0.5)], pos = pos)
+        stimX = TextStim(win, text = 'T', color = 'white', pos = pos, ori = -45)
         stim.append(stimX)
     
+    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(930,-230))) # photostim
+    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(930,-110))) # photostim
+    stim.append(visual.ImageStim(win=win, image='photcell/rect.png', units="pix", pos=(-930,-230))) # photostim
+    stim.append(visual.ImageStim(win=win, image='photocell/rect.png', units="pix", pos=(-930,-110))) # photostim
     screenshot = visual.BufferImageStim(win, stim=stim)
     
+    
     totalFrames = round((stimDuration / 1000) * frameRate)
-    startTime = timer.getTime()
+    startTime = timer.getTime()    
 
     for frame in range(totalFrames): # 0(n)
         screenshot.draw()
         win.flip()
     endTime = timer.getTime() - startTime
 
-    data = {'Trial': trial, 'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Stimulus Start Time (ms)': startTime * 1000, 'Total Stimulus Time (ms)': endTime * 1000, 'Total Estimated Frames': totalFrames}
-    
+    data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': 'X0', 'Probability of 0': probabilityOf0, 'Total 0s': num0s, 'Start Time (ms)': startTime * 1000, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
     return data
 
 
-
-
-def generateFixationCross(win, ser, keymap, trial, probabilityOf0, frameRate, timer, type = 'opt'):
+def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameRate, timer, type = 'opt', totalStimuliDisplay = None):
     fixation = TextStim(win, text = '+', pos = (0,0))
+    #incorrect = sound.Sound('C')
+    
     fixation.height = 50
     
     if type == 'opt':
@@ -127,12 +167,22 @@ def generateFixationCross(win, ser, keymap, trial, probabilityOf0, frameRate, ti
     reactionTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
     rtFrames = totalFrames
     
-    
-    
-    
+    fixation.setAutoDraw(False) # have fixation out for penalty
+    data = None
     correct = None
     if type == 'opt':
-        endTime = reactionTime
+        if key == [3]:
+            penaltyFrameTime = int(0.5 * frameRate)
+            for frame in range(penaltyFrameTime): # waits 0.5 seconds before next sample
+                win.flip()        
+            
+            endTime = timer.getTime() - startTime # end time of this fixation period
+            totalFrames += penaltyFrameTime # adding the penalty in frames.
+        else:
+            endTime = reactionTime
+        
+        data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTime, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
+        
     elif type == 'response':
         for frame in range(frameRate): # waits 1 second before next trial. The ISI
             win.flip()
@@ -143,36 +193,34 @@ def generateFixationCross(win, ser, keymap, trial, probabilityOf0, frameRate, ti
             correct = True
         else:
             correct = False
+            #incorrect.play()
+            
+        data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTimeCedrus, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
         
-    data = {'Trial': trial, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Correct': correct, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTimeCedrus, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
-
-    fixation.setAutoDraw(False)
     return key, data
-        
     
-    
-    
-def trial(win, ser, keymap, trial, numberOfItems, n_n, probVariability, stimDuration, frameRate, timer):
-    probabilityOf0 = np.random.choice(probVariability, size = 1)[0]
+def trial(win, ser, keymap, block, trial, numberOfItems, n_n, itemStimSize, pixelSpace, probabilities, stimDuration, frameRate, timer):
+    probabilityOf0 = probabilities # fixed trial.
+    print(probabilityOf0)
     storeData = []
     repeatedStimuli = True
+    totalStimuliDisplay = 0
     while repeatedStimuli: # 0(n ^ 2)
-        data = generateX0Trial(win, trial = trial, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, stimDuration = stimDuration, frameRate = frameRate, timer = timer)
+        totalStimuliDisplay += 1
+                
+        data = generateX0Trial(win, block = block, trial = trial, totalStimuliDisplay = totalStimuliDisplay, numberOfItems = numberOfItems, probabilityOf0 = probabilityOf0, n_n = n_n, itemStimSize = itemStimSize,  pixelSpace = pixelSpace, stimDuration = stimDuration, frameRate = frameRate, timer = timer)
+        
         storeData.append(data)
         # white fixation: choose to answer or opt out. f to opt, j to skip.
-        optOrSkip, data = generateFixationCross(win, ser, keymap, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'opt')
+        optOrSkip, data = generateFixationCross(win, ser, keymap, block = block, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'opt')
         storeData.append(data)
         
         # black fixation: choose answer.
         if optOrSkip == [2]:
-            _, data = generateFixationCross(win, ser, keymap, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'response')
+            _, data = generateFixationCross(win, ser, keymap, block = block, trial = trial, probabilityOf0 = probabilityOf0, frameRate = frameRate, timer = timer, type = 'response', totalStimuliDisplay = totalStimuliDisplay)
             repeatedStimuli = False
-            storeData.append(data)
-
-               
+            storeData.append(data)                
     return data['Correct'], storeData
-
-
 
 
 def informationInputGUI():
@@ -188,11 +236,7 @@ def informationInputGUI():
     
     if dlg.OK == False:
         core.quit() # ends process.
-        
     return exp_info
-
-
-
 
 def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData):
     participantInfo['Experiment Start Time'] = experimentStartTime
