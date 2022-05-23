@@ -17,7 +17,7 @@ import cedrus_util
 # run over 100 times for 
 def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_n, pixelSpace, stimDuration, numCorrectToEnd = None):
     
-    if (blocks * numTrials) % len(probabilities) != 0:
+    if ((blocks * numTrials) % len(probabilities) != 0) or (blocks * numTrials < numCorrectToEnd):
         core.quit()
     
     fixedEqualNumOccurance = int((blocks * numTrials) / len(probabilities))
@@ -59,12 +59,16 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
                 numCorrectToEnd -= 1
             if numCorrectToEnd != None and numCorrectToEnd == 0:
                 break
-    
-        experimentData.append(blockInstructions(win, timer, ser, keymap, blk + 1, blocks))
 
+        experimentEndTime = timer.getTime() * 1000
+        saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, blk)
 
-    experimentEndTime = timer.getTime() * 1000
-    saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData)
+        if numCorrectToEnd != None and numCorrectToEnd == 0:
+            experimentData.append(instructions(win, timer, ser, keymap, -1))
+            break
+        else:
+            experimentData.append(blockInstructions(win, timer, ser, keymap, blk + 1, blocks))
+
     
     win.close()
     
@@ -73,11 +77,13 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     return
     
 
-experiment(numTrials = 8, blocks = 1, numCorrectToEndToEnd = None,
-           probabilities = [.40, 0.425, 0.575, 0.60], numberOfItems = 40,
+experiment(numTrials = 50, blocks = 6, numCorrectToEnd = 200,
+           probabilities = [0.425, 0.45, 0.55, 0.575], numberOfItems = 40,
            itemStimSize = 25, n_n = 10,  pixelSpace = 125,
            stimDuration = 250)
-                                                                                                     
+
+# numTrials: number of trials per block.
+
 # numberOfItems: total X and 0s in grid.
 # n_n: a value n which determines an nxn grid.
 # probVariability: the biased probability towards 0 in a bernoulli process.

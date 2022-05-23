@@ -25,7 +25,10 @@ def instructions(win, timer, ser, keymap, part):
                                           'majority left T, or press BLUE if you believe the trial is biased toward ' +
                                           'majority right T. Feedback will display in the occurance of an incorrect ' +
                                           ' response.', pos=(0, 0))
-    
+    elif part == -1:
+        instructions = TextStim(win, text='You correctly identified a substantial amount of trials to end this experiment ' +
+                                          'early. This experiment is now done, and you are free to go. ', pos=(0, 0))
+
     instructions.setAutoDraw(True)
     keep_going = True
     totalFrames = 0
@@ -258,11 +261,12 @@ def informationInputGUI():
         core.quit() # ends process.
     return exp_info
 
-def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData):
+def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, block):
     participantInfo['Experiment Start Time'] = experimentStartTime
     participantInfo['Experiment End Time'] = experimentEndTime
     participantInfo['Experiment Data'] = experimentData
     df = pd.DataFrame.from_dict(participantInfo)
-    csvFileName = participantInfo['Participant ID'] + '_' + participantInfo['date'] + '.csv'
+    csvFileName = participantInfo['Participant ID'] + '_' + participantInfo['date'] + '_block' + str(block) + '.csv'
     df.to_csv(csvFileName)
     return
+
