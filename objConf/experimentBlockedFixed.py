@@ -73,7 +73,10 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     return
     
 
-experiment(numTrials = 8, blocks = 1, probabilities = [.40, 0.425, 0.575, 0.60], numberOfItems = 40, itemStimSize = 25, n_n = 10,  pixelSpace = 125, stimDuration = 250)
+experiment(numTrials = 8, blocks = 1, numCorrectToEndToEnd = None,
+           probabilities = [.40, 0.425, 0.575, 0.60], numberOfItems = 40,
+           itemStimSize = 25, n_n = 10,  pixelSpace = 125,
+           stimDuration = 250)
                                                                                                      
 # numberOfItems: total X and 0s in grid.
 # n_n: a value n which determines an nxn grid.
