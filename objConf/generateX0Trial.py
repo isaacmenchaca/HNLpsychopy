@@ -59,7 +59,8 @@ def instructions(win, timer, ser, keymap, part):
 
 
 def blockInstructions(win, timer, ser, keymap, block, blocks):
-    instructions = TextStim(win, text = 'Block ' + str(block) + '/' + str(blocks) + ' is now finished. To continue, press any button.'
+    instructions = TextStim(win, text = 'Block ' + str(block) + '/' + str(blocks) + ' is now finished. Please wait for the moderator ' +
+                                        'to give further instructions. When prompted, press any button to continue.'
                                          , pos = (0,0))
     
     instructions.setAutoDraw(True)
