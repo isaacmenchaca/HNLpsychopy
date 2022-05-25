@@ -15,7 +15,7 @@ import cedrus_util
 
 
 # run over 100 times for 
-def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_n, pixelSpace, stimDuration, numCorrectToEnd = None):
+def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_n, pixelSpace, stimDuration, numCorrectToEnd = None):
     
     if ((blocks * numTrials) % len(probabilities) != 0) or (blocks * numTrials < numCorrectToEnd):
         core.quit()
@@ -26,7 +26,7 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     allProbabiltiesForTrials = allProbabiltiesForTrials.reshape([blocks, numTrials]) # fixed
     
     
-    participantInfo = informationInputGUI()
+    # participantInfo = informationInputGUI()
     
     
     # get portname -- paste Jennys Code.
@@ -34,7 +34,7 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     ser = serial.Serial(portname, 115200) 
 
 
-    win = visual.Window(size=(1920, 1080), units='pix')
+    win = visual.Window(size=(1920, 1080), units='pix', fullscr = True)
     logging.console.setLevel(logging.WARNING)  #this will print if there is a delay
     win.recordFrameIntervals = True    
     win.refreshThreshold = 1/60 + 0.004
@@ -47,6 +47,7 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     experimentData = []
     experimentData.append(instructions(win, timer, ser, keymap, 1))
     experimentData.append(instructions(win, timer, ser, keymap, 2))
+    experimentData.append(instructions(win, timer, ser, keymap, 3))
 
     for blk in range(blocks):
         for i in range(numTrials):
@@ -76,11 +77,19 @@ def experiment(numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_
     core.quit()
     return
     
+participantInfo = informationInputGUI()
 
-experiment(numTrials = 50, blocks = 6, numCorrectToEnd = 200,
-           probabilities = [0.425, 0.45, 0.55, 0.575], numberOfItems = 40,
-           itemStimSize = 25, n_n = 10,  pixelSpace = 125,
-           stimDuration = 250)
+if participantInfo['practice?'] == True:
+    experiment(participantInfo=participantInfo, numTrials=10, blocks=4, numCorrectToEnd=15,
+               probabilities=[0.425, 0.45, 0.55, 0.575], numberOfItems=40,
+               itemStimSize=25, n_n=10, pixelSpace=125,
+               stimDuration=250)
+
+else:
+    experiment(participantInfo=participantInfo, numTrials = 50, blocks = 6, numCorrectToEnd = 200,
+               probabilities = [0.425, 0.45, 0.55, 0.575], numberOfItems = 40,
+               itemStimSize = 25, n_n = 10,  pixelSpace = 125,
+               stimDuration = 250)
 
 # numTrials: number of trials per block.
 
