@@ -24,7 +24,7 @@ def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems,
     fixedEqualNumOccurance = int((blocks * numTrials) / len(probabilities))
     allProbabiltiesForTrials = (np.ones([fixedEqualNumOccurance, len(probabilities)]) * np.array(probabilities)).ravel()# Fixed
 
-    rng = np.random.default_rng(participantInfo['Participant ID']) # pseudo-random for participant in case of error.
+    rng = np.random.default_rng(int(participantInfo['Participant ID'])) # pseudo-random for participant in case of error.
     rng.shuffle(allProbabiltiesForTrials) # shuffling is specific for participant here.
     allProbabiltiesForTrials = allProbabiltiesForTrials.reshape([blocks, numTrials]) # fixed
 

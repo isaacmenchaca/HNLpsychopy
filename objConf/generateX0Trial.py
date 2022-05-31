@@ -279,8 +279,7 @@ def trial(win, ser, keymap, block, trial, numberOfItems, n_n, itemStimSize, pixe
 def informationInputGUI():
     exp_name = 'Letter-Biased Task'
     exp_info = {'Participant ID': '',
-    		'Session': ('1', '2'),
-                'gender:': ('male', 'female', 'non-binary'),
+    		    'Session': ('1', '2'),
                 'age': '',
                 'practice?': False}
 
