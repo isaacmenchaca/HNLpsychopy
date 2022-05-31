@@ -7,24 +7,31 @@ import serial
 import cedrus_util
 from PIL import Image
 import pygame
+import os
 
 
 def instructions(win, timer, ser, keymap, part):
 
     if part == 1:
-        instructions = TextStim(win, text = 'Your task is to determine whether a trial is biased towards a majority ' +
+        instructions = TextStim(win, text = 'Your task is to determine whether a trial contains more ' +
                                             'left or right tilted Ts on the screen. After the stimulus with Ts is presented, ' +
                                             'a white fixation will appear where you will either (1) choose to answer by ' +
-                                            'pressing the RED button or (2) ask for another sample for more evidence by ' +
+                                            'pressing the RED button or (2) ask for another sample for more information by ' +
                                             'pressing the BLUE button. You should expect to select the BLUE button as you ' +
-                                            'more uncertain, and expect to select the RED button when you are confident to ' +
-                                            'answer.', pos = (0,0))
+                                            'are more uncertain, and expect to select the RED button when you are more certain  ' +
+                                            'about an answer.', pos = (0,0))
     elif part == 2:
         instructions = TextStim(win, text='If the option to answer with the RED button is selected, a black fixation ' +
                                           'will appear. Press the RED button if you believe the trial is biased toward ' +
                                           'majority left T, or press BLUE if you believe the trial is biased toward ' +
-                                          'majority right T. Feedback will display in the occurance of an incorrect ' +
-                                          ' response.', pos=(0, 0))
+                                          'majority right T. A red fixation will display as feedback for incorrect ' +
+                                          'responses, whereas a green fixation will display as feedback for correct responses.',
+                                pos=(0, 0))
+    elif part == 3:
+        instructions = TextStim(win, text='There is a reward for getting trials correct. After a certain number of ' +
+                                          'correct trials is reached, the experiment will end early and you will ' +
+                                          'receive your payment.\n\n' +
+                                          'To begin the experiment, press any button. ', pos=(0, 0))
     elif part == -1:
         instructions = TextStim(win, text='You correctly identified a substantial amount of trials to end this experiment ' +
                                           'early. This experiment is now done, and you are free to go. ', pos=(0, 0))
@@ -49,8 +56,12 @@ def instructions(win, timer, ser, keymap, part):
     
     endTime = endTimer - startTime
     # convert the time of correct button push
-    endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
-   
+
+    try:
+    	endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    except IndexError:
+    	print('Index Error Instance Caught')
+    	endTimeCedrus = 999
     
     instructions.setAutoDraw(False)
             
@@ -83,7 +94,14 @@ def blockInstructions(win, timer, ser, keymap, block, blocks):
     
     endTime = endTimer - startTime
     # convert the time of correct button push
-    endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    
+    
+    try:
+    	endTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    except IndexError:
+    	print('Index Error Instance Caught')
+    	endTimeCedrus = 999
+    
     instructions.setAutoDraw(False)
             
     return {'Stim Type': 'Block Instructions', 'Start Time (ms)': startTime * 1000,
@@ -119,8 +137,8 @@ def generateX0Trial(win, block, trial, totalStimuliDisplay, numberOfItems, proba
         stimX = TextStim(win, text = 'T', color = 'white', pos = pos, ori = -45)
         stim.append(stimX)
 
-    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-230))) # photostim
-    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-110))) # photostim
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230))) # photostim
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))) # photostim
     screenshot = visual.BufferImageStim(win, stim=stim)
     
     
@@ -146,10 +164,10 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         fixation.color = 'white'
     elif type == 'response':
         fixation.color = 'black'
-        photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230)) # photostim
-        photocell2 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))  # photostim
-        photocell1.setAutoDraw(True)
-        photocell2.setAutoDraw(True)
+        #photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230)) # photostim
+        #photocell2 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))  # photostim
+        #photocell1.setAutoDraw(True)
+        #photocell2.setAutoDraw(True)
     
     fixation.setAutoDraw(True)
 
@@ -177,7 +195,12 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
     
     reactionTime = reactionTimer - startTime
     # convert the time of correct button push
-    reactionTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    try:
+    	reactionTimeCedrus = cedrus_util.HexToRt(cedrus_util.BytesListToHexList(time))
+    except IndexError:
+    	print('Index Error Instance Caught')
+    	reactionTimeCedrus = 999
+    	
     rtFrames = totalFrames
     
 
@@ -198,13 +221,17 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTime, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
         
     elif type == 'response':
-        photocell1.setAutoDraw(False)
-        photocell2.setAutoDraw(False)
+        #photocell1.setAutoDraw(False)
+        #photocell2.setAutoDraw(False)
 
         
         if (key == [2] and probabilityOf0 < 0.5) or (key == [3] and probabilityOf0 > 0.5):
             correct = True
-
+            correctFrameTime = int(0.5 * frameRate)
+            fixation.color = 'green'
+            for frame in range(correctFrameTime): # waits 0.5 seconds before next sample
+                win.flip()
+            totalFrames += correctFrameTime
         else:
             correct = False
             #incorrect.play()
@@ -253,7 +280,8 @@ def informationInputGUI():
     		'Session': ('1', '2'),
                 'gender:': ('male', 'female'),
                 'age': '',
-                'left-handed': False}
+                'practice?': False}
+
     dlg = gui.DlgFromDict(dictionary = exp_info, title = exp_name)
     exp_info['date'] = data.getDateStr()
     exp_info['exp name'] = exp_name
@@ -262,12 +290,12 @@ def informationInputGUI():
         core.quit() # ends process.
     return exp_info
 
-def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, block):
+def saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, block, dataPath):
     participantInfo['Experiment Start Time'] = experimentStartTime
     participantInfo['Experiment End Time'] = experimentEndTime
     participantInfo['Experiment Data'] = experimentData
     df = pd.DataFrame.from_dict(participantInfo)
     csvFileName = participantInfo['Participant ID'] + '_' + participantInfo['date'] + '_block' + str(block) + '.csv'
-    df.to_csv(csvFileName)
+    df.to_csv(os.path.join(dataPath, csvFileName))
     return
 

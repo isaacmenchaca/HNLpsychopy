@@ -11,11 +11,12 @@ import pandas as pd
 import numpy as np
 import serial
 import cedrus_util
+import os
 
 
 
 # run over 100 times for 
-def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_n, pixelSpace, stimDuration, numCorrectToEnd = None):
+def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems, itemStimSize, n_n, pixelSpace, stimDuration, dataPath, numCorrectToEnd = None):
     
     if ((blocks * numTrials) % len(probabilities) != 0) or (blocks * numTrials < numCorrectToEnd):
         core.quit()
@@ -62,7 +63,7 @@ def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems,
                 break
 
         experimentEndTime = timer.getTime() * 1000
-        saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, blk)
+        saveExperimentData(participantInfo, experimentStartTime, experimentEndTime, experimentData, blk, dataPath)
 
         if numCorrectToEnd != None and numCorrectToEnd == 0:
             experimentData.append(instructions(win, timer, ser, keymap, -1))
@@ -76,20 +77,25 @@ def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems,
     print('Overall, %i frames were dropped.' % win.nDroppedFrames)
     core.quit()
     return
-    
-participantInfo = informationInputGUI()
 
-if participantInfo['practice?'] == True:
-    experiment(participantInfo=participantInfo, numTrials=10, blocks=4, numCorrectToEnd=15,
-               probabilities=[0.425, 0.45, 0.55, 0.575], numberOfItems=40,
-               itemStimSize=25, n_n=10, pixelSpace=125,
-               stimDuration=250)
+if __name__ == '__main__':
+    participantInfo = informationInputGUI()
 
-else:
-    experiment(participantInfo=participantInfo, numTrials = 50, blocks = 6, numCorrectToEnd = 200,
-               probabilities = [0.425, 0.45, 0.55, 0.575], numberOfItems = 40,
-               itemStimSize = 25, n_n = 10,  pixelSpace = 125,
-               stimDuration = 250)
+    currentPath = os.getcwd()
+    path = os.path.join(currentPath, 'data/' + participantInfo['Participant ID'] + 'Session' + participantInfo['Session'])
+    os.mkdir(path)
+
+    if participantInfo['practice?'] == True:
+        experiment(participantInfo=participantInfo, numTrials=10, blocks=4, numCorrectToEnd=15,
+                   probabilities=[0.4, 0.425, 0.575, 0.6], numberOfItems=40,
+                   itemStimSize=25, n_n=10, pixelSpace=125,
+                   stimDuration=400, dataPath = path)
+
+    else:
+        experiment(participantInfo=participantInfo, numTrials = 50, blocks = 4, numCorrectToEnd = 150,
+                   probabilities = [0.4, 0.425, 0.575, 0.6], numberOfItems = 40,
+                   itemStimSize = 25, n_n = 10,  pixelSpace = 125,
+                   stimDuration = 400, dataPath = path)
 
 # numTrials: number of trials per block.
 
