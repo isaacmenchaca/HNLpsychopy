@@ -20,16 +20,14 @@ def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems,
     
     if ((blocks * numTrials) % len(probabilities) != 0) or (blocks * numTrials < numCorrectToEnd):
         core.quit()
-    
+
     fixedEqualNumOccurance = int((blocks * numTrials) / len(probabilities))
     allProbabiltiesForTrials = (np.ones([fixedEqualNumOccurance, len(probabilities)]) * np.array(probabilities)).ravel()# Fixed
-    np.random.shuffle(allProbabiltiesForTrials) # Fixed
+
+    rng = np.random.default_rng(participantInfo['Participant ID']) # pseudo-random for participant in case of error.
+    rng.shuffle(allProbabiltiesForTrials) # shuffling is specific for participant here.
     allProbabiltiesForTrials = allProbabiltiesForTrials.reshape([blocks, numTrials]) # fixed
-    
-    
-    # participantInfo = informationInputGUI()
-    
-    
+
     # get portname -- paste Jennys Code.
     portname, keymap = cedrus_util.getname()
     ser = serial.Serial(portname, 115200) 
@@ -80,10 +78,12 @@ def experiment(participantInfo, numTrials, blocks, probabilities, numberOfItems,
 
 if __name__ == '__main__':
     participantInfo = informationInputGUI()
-
     currentPath = os.getcwd()
     path = os.path.join(currentPath, 'data/' + participantInfo['Participant ID'] + 'Session' + participantInfo['Session'])
-    os.mkdir(path)
+
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
 
     if participantInfo['practice?'] == True:
         experiment(participantInfo=participantInfo, numTrials=10, blocks=4, numCorrectToEnd=15,

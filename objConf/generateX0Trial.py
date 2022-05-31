@@ -137,8 +137,8 @@ def generateX0Trial(win, block, trial, totalStimuliDisplay, numberOfItems, proba
         stimX = TextStim(win, text = 'T', color = 'white', pos = pos, ori = -45)
         stim.append(stimX)
 
-    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230))) # photostim
-    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))) # photostim
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230))) # photostim bottom analog right
+    stim.append(visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))) # photostim top digital right
     screenshot = visual.BufferImageStim(win, stim=stim)
     
     
@@ -164,9 +164,9 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         fixation.color = 'white'
     elif type == 'response':
         fixation.color = 'black'
-        #photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-230)) # photostim
-        #photocell2 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(930,-110))  # photostim
-        #photocell1.setAutoDraw(True)
+        # photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-230)) # photostim
+        #photocell2 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930,-110))  # photostim
+        # photocell1.setAutoDraw(True)
         #photocell2.setAutoDraw(True)
     
     fixation.setAutoDraw(True)
@@ -221,10 +221,11 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
         data = {'Block': block, 'Trial': trial, 'totalStimuliDisplay': totalStimuliDisplay, 'Stim Type': type, 'Response': key, 'Probability of 0': probabilityOf0, 'Start Time (ms)': startTime * 1000, 'Reaction Time (ms)':  reactionTime * 1000, 'CEDRUS Reaction Time (ms)': reactionTime, 'Reaction Time (frames)': rtFrames, 'Total Time (ms)': endTime * 1000, 'Total Frames': totalFrames}
         
     elif type == 'response':
-        #photocell1.setAutoDraw(False)
+        # photocell1.setAutoDraw(False)
         #photocell2.setAutoDraw(False)
 
-        
+        photocell1 = visual.ImageStim(win=win, image='./photocell/rect.png', units="pix", pos=(-930, -230))
+        photocell1.setAutoDraw(True)
         if (key == [2] and probabilityOf0 < 0.5) or (key == [3] and probabilityOf0 > 0.5):
             correct = True
             correctFrameTime = int(0.5 * frameRate)
@@ -241,6 +242,7 @@ def generateFixationCross(win, ser, keymap, block, trial, probabilityOf0, frameR
                 win.flip()
             totalFrames += incorrectFrameTime
         fixation.setAutoDraw(False)
+        photocell1.setAutoDraw(False)
         for frame in range(frameRate): # waits 1 second before next trial. The ISI
             win.flip()
         endTime = timer.getTime() - startTime # end time of this fixation presentation.
@@ -278,7 +280,7 @@ def informationInputGUI():
     exp_name = 'Letter-Biased Task'
     exp_info = {'Participant ID': '',
     		'Session': ('1', '2'),
-                'gender:': ('male', 'female'),
+                'gender:': ('male', 'female', 'non-binary'),
                 'age': '',
                 'practice?': False}
 
