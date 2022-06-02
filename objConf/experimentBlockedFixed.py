@@ -85,15 +85,21 @@ if __name__ == '__main__':
         os.mkdir(path)
 
 
-    if participantInfo['practice?'] == True:
+    if participantInfo['Session'] == 'practice':
         experiment(participantInfo=participantInfo, numTrials=10, blocks=4, numCorrectToEnd=15,
                    probabilities=[0.4, 0.425, 0.575, 0.6], numberOfItems=40,
                    itemStimSize=25, n_n=10, pixelSpace=125,
                    stimDuration=400, dataPath = path)
 
-    else:
+    elif participantInfo['Session'] == '1':
         experiment(participantInfo=participantInfo, numTrials = 50, blocks = 4, numCorrectToEnd = 150,
                    probabilities = [0.4, 0.425, 0.575, 0.6], numberOfItems = 40,
+                   itemStimSize = 25, n_n = 10,  pixelSpace = 125,
+                   stimDuration = 400, dataPath = path)
+
+    elif participantInfo['Session'] == '2':
+        experiment(participantInfo= participantInfo, numTrials = 50, blocks = 4, numCorrectToEnd = 150,
+                   probabilities = [0.425, 0.45, 0.55, 0.575], numberOfItems = 40,
                    itemStimSize = 25, n_n = 10,  pixelSpace = 125,
                    stimDuration = 400, dataPath = path)
 
